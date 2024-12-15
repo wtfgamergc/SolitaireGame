@@ -26,7 +26,22 @@ namespace Solitaire
         {
             InitializeComponent();
             _gameManager = new GameManager(GameCanvas);
+
+            // Подписка на клик по колоде
+            GameCanvas.MouseLeftButtonDown += GameCanvas_MouseLeftButtonDown;
         }
+
+        private void GameCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            Point clickPoint = e.GetPosition(GameCanvas);
+
+            // Проверяем, попал ли клик в область колоды (Stock)
+            if (clickPoint.X >= 50 && clickPoint.X <= 150 && clickPoint.Y >= 10 && clickPoint.Y <= 150)
+            {
+                _gameManager.MoveCardFromStockToWaste();
+            }
+        }
+
 
         private void NewGameButton_Click(object sender, RoutedEventArgs e) => _gameManager.StartNewGame();
 
