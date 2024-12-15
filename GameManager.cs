@@ -254,36 +254,92 @@ namespace Solitaire.Services
 
         public void SaveGame()
         {
-            // Реализация сохранения текущего состояния игры (например, сериализация в файл)
-            var saveData = new
+            var saveData = new SaveData
             {
-                Stock = _gameState.Stock.GetAllCards().ToList(),
-                Waste = _gameState.Waste.GetAllCards().ToList(),
-                Tableau = _gameState.TableauPiles.Select(pile => pile.GetAllCards().ToList()).ToList(),
-                Foundation = _gameState.FoundationPiles.Select(pile => pile.GetAllCards().ToList()).ToList()
+                Stock = _gameState.Stock.GetAllCards().Select(card => new CardData
+                {
+                    CardSuit = (int)card.CardSuit,
+                    CardRank = (int)card.CardRank,
+                    IsFaceUp = card.IsFaceUp
+                }).ToList(),
+
+                Waste = _gameState.Waste.GetAllCards().Select(card => new CardData
+                {
+                    CardSuit = (int)card.CardSuit,
+                    CardRank = (int)card.CardRank,
+                    IsFaceUp = card.IsFaceUp
+                }).ToList(),
+
+                Tableau = _gameState.TableauPiles.Select(pile => pile.GetAllCards().Select(card => new CardData
+                {
+                    CardSuit = (int)card.CardSuit,
+                    CardRank = (int)card.CardRank,
+                    IsFaceUp = card.IsFaceUp
+                }).ToList()).ToList(),
+
+                Foundation = _gameState.FoundationPiles.Select(pile => pile.GetAllCards().Select(card => new CardData
+                {
+                    CardSuit = (int)card.CardSuit,
+                    CardRank = (int)card.CardRank,
+                    IsFaceUp = card.IsFaceUp
+                }).ToList()).ToList()
             };
 
-            var saveFilePath = "game_save.json";
-            var saveJson = System.Text.Json.JsonSerializer.Serialize(saveData);
-            System.IO.File.WriteAllText(saveFilePath, saveJson);
+            var saveJson = System.Text.Json.JsonSerializer.Serialize(saveData, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            System.IO.File.WriteAllText("game_save.json", saveJson);
         }
+
 
         public void LoadGame()
         {
-            // Реализация загрузки состояния игры из файла
+            // Путь к сохраненному файлу
             var saveFilePath = "game_save.json";
             if (!System.IO.File.Exists(saveFilePath)) return;
 
+            // Чтение и десериализация JSON
             var saveJson = System.IO.File.ReadAllText(saveFilePath);
-            var saveData = System.Text.Json.JsonSerializer.Deserialize<dynamic>(saveJson);
+            var saveData = System.Text.Json.JsonSerializer.Deserialize<SaveData>(saveJson);
 
-            _gameState.Stock = new Deck(((IEnumerable<dynamic>)saveData.Stock).Select(item => new Card((Card.Suit)item.CardSuit, (Card.Rank)item.CardRank)));
-            _gameState.Waste = new Deck(((IEnumerable<dynamic>)saveData.Waste).Select(item => new Card((Card.Suit)item.CardSuit, (Card.Rank)item.CardRank)));
-            _gameState.TableauPiles = ((IEnumerable<dynamic>)saveData.Tableau).Select(pile => new Deck(((IEnumerable<dynamic>)pile).Select(item => new Card((Card.Suit)item.CardSuit, (Card.Rank)item.CardRank)))).ToList();
-            _gameState.FoundationPiles = ((IEnumerable<dynamic>)saveData.Foundation).Select(pile => new Deck(((IEnumerable<dynamic>)pile).Select(item => new Card((Card.Suit)item.CardSuit, (Card.Rank)item.CardRank)))).ToList();
+            if (saveData == null) return;
 
+            // Восстановление Stock (в обратном порядке для корректного стека)
+            _gameState.Stock = new Deck(saveData.Stock
+                .ToList() // Убедимся, что это список
+                .AsEnumerable() // Преобразуем в последовательность
+                .Reverse() // Переворачиваем порядок
+                .Select(card => new Card((Card.Suit)card.CardSuit, (Card.Rank)card.CardRank) { IsFaceUp = card.IsFaceUp }));
+
+            // Восстановление Waste
+            _gameState.Waste = new Deck(saveData.Waste
+                .ToList() // Убедимся, что это список
+                .AsEnumerable() // Преобразуем в последовательность
+                .Reverse() // Переворачиваем порядок
+                .Select(card => new Card((Card.Suit)card.CardSuit, (Card.Rank)card.CardRank) { IsFaceUp = card.IsFaceUp }));
+
+            // Восстановление Tableau
+            _gameState.TableauPiles = saveData.Tableau
+                .Select(pile => new Deck(pile
+                    .ToList() // Убедимся, что это список
+                    .AsEnumerable() // Преобразуем в последовательность
+                    .Reverse() // Переворачиваем порядок
+                    .Select(card => new Card((Card.Suit)card.CardSuit, (Card.Rank)card.CardRank) { IsFaceUp = card.IsFaceUp })))
+                .ToList();
+
+            // Восстановление Foundation
+            _gameState.FoundationPiles = saveData.Foundation
+                .Select(pile => new Deck(pile
+                    .ToList() // Убедимся, что это список
+                    .AsEnumerable() // Преобразуем в последовательность
+                    .Reverse() // Переворачиваем порядок
+                    .Select(card => new Card((Card.Suit)card.CardSuit, (Card.Rank)card.CardRank) { IsFaceUp = card.IsFaceUp })))
+                .ToList();
+
+            // Перерисовка игрового поля
             DrawGame();
         }
+
+
+
 
         public void RestartGame()
         {
@@ -292,4 +348,20 @@ namespace Solitaire.Services
         }
 
     }
+    public class SaveData
+    {
+        public List<CardData> Stock { get; set; }
+        public List<CardData> Waste { get; set; }
+        public List<List<CardData>> Tableau { get; set; }
+        public List<List<CardData>> Foundation { get; set; }
+    }
+
+    public class CardData
+    {
+        public int CardSuit { get; set; }
+        public int CardRank { get; set; }
+        public bool IsFaceUp { get; set; }
+    }
+
+
 }
