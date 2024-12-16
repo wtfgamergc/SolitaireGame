@@ -79,7 +79,7 @@ namespace Solitaire.Services
             }
 
             // Проверяем цвет
-            bool isOppositeColor = (draggedCard.CardSuit == Card.Suit.Hearts || draggedCard.CardSuit == Card.Suit.Diamonds) !=
+            bool isOppositeColor = (draggedCard.CardSuit == Card.Suit.Hearts || draggedCard.CardSuit == Card.Suit.Diamonds) ==
                                    (targetCard.CardSuit == Card.Suit.Clubs || targetCard.CardSuit == Card.Suit.Spades);
 
             // Проверяем ранг (должен быть на 1 меньше)
