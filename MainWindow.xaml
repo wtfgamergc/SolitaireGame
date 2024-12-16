@@ -6,7 +6,7 @@
     <Grid>
         <!-- Игровое поле -->
         <Canvas Name="GameCanvas" Background="Green" AllowDrop="True" 
-        DragEnter="GameCanvas_DragEnter" Drop="GameCanvas_Drop">
+        DragEnter="GameCanvas_DragEnter" Drop="GameCanvas_Drop" Margin="0,45,0,0">
         </Canvas>
 
         <!-- Кнопки управления -->
