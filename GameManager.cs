@@ -56,14 +56,22 @@ namespace Solitaire.Services
 
         private void HandleCardDrop(Card draggedCard, Card targetCard)
         {
-            // Проверка правил:
-            // 1. Перемещение возможно только на карту противоположного цвета и на 1 ранг больше.
+            if (targetCard == null) // Целевая область может быть Foundation
+            {
+                var foundation = _gameState.FoundationPiles.FirstOrDefault(f =>
+                    IsMoveToFoundationValid(draggedCard, f));
+                if (foundation != null)
+                {
+                    MoveCardToFoundation(draggedCard);
+                    DrawGame();
+                    return;
+                }
+            }
+
+            // Проверка правил перемещения между Tableau
             if (IsMoveValid(draggedCard, targetCard))
             {
-                // Логика перемещения карты
                 MoveCard(draggedCard, targetCard);
-
-                // Обновляем графику
                 DrawGame();
             }
             else
@@ -71,6 +79,7 @@ namespace Solitaire.Services
                 MessageBox.Show("Неверный ход!");
             }
         }
+
         private bool IsMoveValid(Card draggedCard, Card targetCard = null)
         {
             if (targetCard == null) // Если целевая колонка пустая
@@ -79,14 +88,70 @@ namespace Solitaire.Services
             }
 
             // Проверяем цвет
-            bool isOppositeColor = (draggedCard.CardSuit == Card.Suit.Hearts || draggedCard.CardSuit == Card.Suit.Diamonds) !=
-                                   (targetCard.CardSuit == Card.Suit.Clubs || targetCard.CardSuit == Card.Suit.Spades);
+            bool isRed = draggedCard.CardSuit == Card.Suit.Hearts || draggedCard.CardSuit == Card.Suit.Diamonds;
+            bool isBlack = targetCard.CardSuit == Card.Suit.Clubs || targetCard.CardSuit == Card.Suit.Spades;
+
+            bool isOppositeColor = isRed == isBlack; // Красная карта и чёрная считаются противоположными.
 
             // Проверяем ранг (должен быть на 1 меньше)
             bool isOneRankLower = (int)draggedCard.CardRank == (int)targetCard.CardRank - 1;
 
             return isOppositeColor && isOneRankLower;
         }
+        private bool IsMoveToFoundationValid(Card card, Deck foundation)
+        {
+            if (foundation.IsEmpty())
+            {
+                // Первая карта в Foundation должна быть тузом
+                return card.CardRank == Card.Rank.Ace;
+            }
+            var topCard = foundation.GetAllCards().First(); // Верхняя карта Foundation
+            return topCard.CardSuit == card.CardSuit &&
+                   (int)card.CardRank == (int)topCard.CardRank + 1; // Следующий ранг
+        }
+        private void OnCardMovedToFoundation(Deck foundation)
+        {
+            // Проверяем, завершён ли Foundation
+            if (foundation.GetAllCards().Count() == 13) // 13 карт в каждой масти
+            {
+                OnFoundationCompleted();
+            }
+        }
+
+        private void MoveCardToFoundation(Card card)
+        {
+            Deck sourcePile = null;
+
+            // Найти исходную стопку (Tableau или Waste)
+            foreach (var pile in _gameState.TableauPiles)
+            {
+                if (pile.GetAllCards().Contains(card))
+                {
+                    sourcePile = pile;
+                    break;
+                }
+            }
+            if (_gameState.Waste.GetAllCards().Contains(card))
+            {
+                sourcePile = _gameState.Waste;
+            }
+
+            if (sourcePile != null)
+            {
+                sourcePile.RemoveCard(card);
+
+                // Найти Foundation для соответствующей масти
+                var targetFoundation = _gameState.FoundationPiles.FirstOrDefault(f =>
+                    f.IsEmpty() || f.GetAllCards().First().CardSuit == card.CardSuit);
+
+                if (targetFoundation != null)
+                {
+                    targetFoundation.AddCard(card);
+                    OnCardMovedToFoundation(targetFoundation); // Обработка завершения Foundation
+                }
+            }
+        }
+
 
         private void MoveCard(Card draggedCard, Card targetCard)
         {
@@ -177,6 +242,11 @@ namespace Solitaire.Services
 
 
         }
+        private bool IsGameWon()
+        {
+            return _gameState.FoundationPiles.All(f => f.GetAllCards().Count() == 13);
+        }
+
 
         public void StartNewGame()
         {
@@ -187,6 +257,15 @@ namespace Solitaire.Services
             _gameState.Waste = new Deck(new List<Card>()); // Очистка стека удержания
             _score = 0;
             UpdateScoreDisplay();
+
+            _gameState.FoundationPiles = new List<Deck>
+            {
+                new Deck(new List<Card>()), // Foundation для червей
+                new Deck(new List<Card>()), // Foundation для бубен
+                new Deck(new List<Card>()), // Foundation для треф
+                new Deck(new List<Card>())  // Foundation для пик
+            };
+
 
             // Создание новой колоды
             var fullDeck = CreateFullDeck().OrderBy(_ => Guid.NewGuid()).ToList();
@@ -258,6 +337,39 @@ namespace Solitaire.Services
                 Canvas.SetLeft(wasteControl, startX + 120);
                 Canvas.SetTop(wasteControl, startY - 90); // Условная позиция
                 _canvas.Children.Add(wasteControl);
+            }
+            // Отображение Foundation
+            double foundationStartX = 410;
+            double foundationY = 10;
+
+            for (int i = 0; i < _gameState.FoundationPiles.Count; i++)
+            {
+                var foundation = _gameState.FoundationPiles[i];
+                double x = foundationStartX + i * 120;
+
+                if (!foundation.IsEmpty())
+                {
+                    var topCard = foundation.GetAllCards().First();
+                    var cardControl = CreateCardControl(topCard);
+                    Canvas.SetLeft(cardControl, x);
+                    Canvas.SetTop(cardControl, foundationY);
+                    _canvas.Children.Add(cardControl);
+                }
+                else
+                {
+                    // Отображение пустого слота для Foundation
+                    var placeholder = new Border
+                    {
+                        Width = 100,
+                        Height = 140,
+                        Background = Brushes.LightGray,
+                        BorderBrush = Brushes.Black,
+                        BorderThickness = new Thickness(1)
+                    };
+                    Canvas.SetLeft(placeholder, x);
+                    Canvas.SetTop(placeholder, foundationY);
+                    _canvas.Children.Add(placeholder);
+                }
             }
         }
         private UIElement CreateCardControl(Card card)
