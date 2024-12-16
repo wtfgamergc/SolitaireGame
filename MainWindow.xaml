@@ -5,8 +5,8 @@
         Title="Solitaire" Height="800" Width="1200">
     <Grid>
         <!-- Игровое поле -->
-        <Canvas Name="GameCanvas" Background="Green" AllowDrop="True" Margin="0,55,0,0">
-            <!-- Карты будут добавляться программно -->
+        <Canvas Name="GameCanvas" Background="Green" AllowDrop="True" 
+        DragEnter="GameCanvas_DragEnter" Drop="GameCanvas_Drop">
         </Canvas>
 
         <!-- Кнопки управления -->

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using Solitaire.Models;
@@ -15,13 +16,56 @@ namespace Solitaire.Services
     {
         private readonly Canvas _canvas;
         private readonly GameState _gameState;
+        private UIElement _draggedElement;
+        private Point _dragStartPoint;
 
         public GameManager(Canvas canvas)
         {
             _canvas = canvas;
             _gameState = new GameState();
         }
+        public void InitializeDragAndDrop(UIElement cardControl)
+        {
+            // Добавляем события для карты
+            cardControl.MouseMove += Card_MouseMove;
+            cardControl.MouseLeftButtonDown += Card_MouseLeftButtonDown;
+            cardControl.MouseLeftButtonUp += Card_MouseLeftButtonUp;
+        }
 
+        private void Card_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            _draggedElement = sender as UIElement;
+            _dragStartPoint = e.GetPosition(_canvas);
+            if (_draggedElement != null)
+            {
+                Panel.SetZIndex(_draggedElement, 100); // Переместить элемент на передний план
+            }
+        }
+
+        private void Card_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (_draggedElement != null && e.LeftButton == MouseButtonState.Pressed)
+            {
+                Point currentPoint = e.GetPosition(_canvas);
+                double offsetX = currentPoint.X - _dragStartPoint.X;
+                double offsetY = currentPoint.Y - _dragStartPoint.Y;
+
+                // Перемещаем элемент
+                Canvas.SetLeft(_draggedElement, Canvas.GetLeft(_draggedElement) + offsetX);
+                Canvas.SetTop(_draggedElement, Canvas.GetTop(_draggedElement) + offsetY);
+
+                _dragStartPoint = currentPoint;
+            }
+        }
+
+        private void Card_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (_draggedElement != null)
+            {
+                Panel.SetZIndex(_draggedElement, 0); // Вернуть элемент на исходный слой
+                _draggedElement = null;
+            }
+        }
         public void StartNewGame()
         {
             // Очистка текущего состояния
@@ -126,6 +170,9 @@ namespace Solitaire.Services
                 };
                 border.Child = text;
             }
+
+            // Добавляем Drag-and-Drop обработчики
+            InitializeDragAndDrop(border);
 
             return border;
         }

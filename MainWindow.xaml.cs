@@ -21,6 +21,7 @@ namespace Solitaire
     public partial class MainWindow : Window
     {
         private GameManager _gameManager;
+        private UIElement _draggedElement;
 
         public MainWindow()
         {
@@ -39,6 +40,22 @@ namespace Solitaire
             if (clickPoint.X >= 50 && clickPoint.X <= 150 && clickPoint.Y >= 10 && clickPoint.Y <= 150)
             {
                 _gameManager.MoveCardFromStockToWaste();
+            }
+        }
+        private void GameCanvas_DragEnter(object sender, DragEventArgs e)
+        {
+            e.Effects = DragDropEffects.Move; // Задаём эффект перемещения
+        }
+
+        private void GameCanvas_Drop(object sender, DragEventArgs e)
+        {
+            // Логика размещения карты после перетаскивания
+            var position = e.GetPosition(GameCanvas);
+            if (_draggedElement != null)
+            {
+                Canvas.SetLeft(_draggedElement, position.X - (_draggedElement.RenderSize.Width / 2));
+                Canvas.SetTop(_draggedElement, position.Y - (_draggedElement.RenderSize.Height / 2));
+                _draggedElement = null;
             }
         }
 
