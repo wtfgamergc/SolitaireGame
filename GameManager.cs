@@ -18,12 +18,42 @@ namespace Solitaire.Services
         private readonly GameState _gameState;
         private UIElement _draggedElement;
         private Point _dragStartPoint;
+        private int _score;
+        public event Action<int> ScoreUpdated; // Событие для обновления очков
 
         public GameManager(Canvas canvas)
         {
             _canvas = canvas;
             _gameState = new GameState();
+            _score = 0; // Инициализируем очки
         }
+        public void AddPoints(int points)
+        {
+            _score += points;
+            UpdateScoreDisplay();
+        }
+
+        public int GetScore()
+        {
+            return _score;
+        }
+        // Метод вызывается, когда карта перевернута
+        public void OnCardFlipped()
+        {
+            AddPoints(10); // Добавляем 10 очков за открытую карту
+        }
+
+        // Метод вызывается, когда Foundation завершен
+        public void OnFoundationCompleted()
+        {
+            AddPoints(100); // Добавляем 100 очков за заполнение Foundation
+        }
+        private void UpdateScoreDisplay()
+        {
+            // Отправляем событие в MainWindow для обновления UI
+            ScoreUpdated?.Invoke(_score);
+        }
+
         private void HandleCardDrop(Card draggedCard, Card targetCard)
         {
             // Проверка правил:
@@ -76,6 +106,7 @@ namespace Solitaire.Services
             if (_gameState.Waste.GetAllCards().Contains(draggedCard))
             {
                 sourcePile = _gameState.Waste;
+                OnCardFlipped();
             }
 
             // Найти целевую стопку
@@ -97,7 +128,9 @@ namespace Solitaire.Services
                 if (sourcePile != _gameState.Waste && sourcePile.GetAllCards().Any())
                 {
                     var topCard = sourcePile.GetAllCards().First();
+                    if (topCard.IsFaceUp != true) OnCardFlipped();
                     topCard.IsFaceUp = true;
+                    
                 }
 
                 // Добавляем карту в целевую стопку
@@ -152,6 +185,8 @@ namespace Solitaire.Services
             _gameState.TableauPiles.Clear();
             _gameState.FoundationPiles.Clear();
             _gameState.Waste = new Deck(new List<Card>()); // Очистка стека удержания
+            _score = 0;
+            UpdateScoreDisplay();
 
             // Создание новой колоды
             var fullDeck = CreateFullDeck().OrderBy(_ => Guid.NewGuid()).ToList();
@@ -373,13 +408,14 @@ namespace Solitaire.Services
                     CardSuit = (int)card.CardSuit,
                     CardRank = (int)card.CardRank,
                     IsFaceUp = card.IsFaceUp
-                }).ToList()).ToList()
+                }).ToList()).ToList(),
+
+                Score = _score // Сохраняем текущие очки
             };
 
             var saveJson = System.Text.Json.JsonSerializer.Serialize(saveData, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
             System.IO.File.WriteAllText("game_save.json", saveJson);
         }
-
 
         public void LoadGame()
         {
@@ -425,11 +461,13 @@ namespace Solitaire.Services
                     .Select(card => new Card((Card.Suit)card.CardSuit, (Card.Rank)card.CardRank) { IsFaceUp = card.IsFaceUp })))
                 .ToList();
 
+            // Восстановление очков
+            _score = saveData.Score;
+            UpdateScoreDisplay(); // Обновляем отображение очков
+
             // Перерисовка игрового поля
             DrawGame();
         }
-
-
 
 
         public void RestartGame()
@@ -445,6 +483,7 @@ namespace Solitaire.Services
         public List<CardData> Waste { get; set; }
         public List<List<CardData>> Tableau { get; set; }
         public List<List<CardData>> Foundation { get; set; }
+        public int Score { get; set; } // Новое поле для очков
     }
 
     public class CardData

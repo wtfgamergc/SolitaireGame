@@ -1,0 +1,9 @@
+﻿<Window x:Class="Solitaire.PlayerNameDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Введите имя игрока" Height="200" Width="300">
+    <Grid>
+        <TextBox Name="PlayerNameTextBox" HorizontalAlignment="Center" VerticalAlignment="Center" Width="200" Height="30"/>
+        <Button Content="Сохранить" HorizontalAlignment="Center" VerticalAlignment="Bottom" Width="100" Height="30" Click="SaveButton_Click"/>
+    </Grid>
+</Window>

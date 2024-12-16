@@ -20,5 +20,7 @@ namespace Solitaire.Models
             Waste = new Deck(new List<Card>());
             FoundationPiles = new List<Deck>();
         }
+        
+
     }
 }

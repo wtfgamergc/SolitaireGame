@@ -9,6 +9,15 @@
         DragEnter="GameCanvas_DragEnter" Drop="GameCanvas_Drop" Margin="0,45,0,0">
         </Canvas>
 
+        <TextBlock Name="ScoreTextBlock" 
+           Text="Очки: 0" 
+           Foreground="White" 
+           FontSize="16" 
+           VerticalAlignment="Top" 
+           HorizontalAlignment="Right" 
+           Margin="0,10,10,0"/>
+        
+
         <!-- Кнопки управления -->
         <StackPanel Orientation="Horizontal" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="10">
             <Button Name="NewGameButton" Content="Новая игра" Width="100" Margin="5" Click="NewGameButton_Click"/>
@@ -16,6 +25,8 @@
             <Button Name="LoadGameButton" Content="Загрузить" Width="100" Margin="5" Click="LoadGameButton_Click"/>
             <Button Name="RestartButton" Content="Рестарт" Width="100" Margin="5" Click="RestartButton_Click"/>
             <Button Name="ViewRecordsButton" Content="Рекорды" Width="100" Margin="5" Click="ViewRecordsButton_Click"/>
+            <Button Name="SaveScoreButton" Content="Сохранить очки" Width="150" Margin="5" Click="SaveScoreButton_Click"/>
+
         </StackPanel>
     </Grid>
 </Window>

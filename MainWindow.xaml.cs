@@ -27,10 +27,16 @@ namespace Solitaire
         {
             InitializeComponent();
             _gameManager = new GameManager(GameCanvas);
+            _gameManager.ScoreUpdated += UpdateScoreUI;
 
             // Подписка на клик по колоде
             GameCanvas.MouseLeftButtonDown += GameCanvas_MouseLeftButtonDown;
 
+        }
+
+        private void UpdateScoreUI(int score)
+        {
+            ScoreTextBlock.Text = $"Очки: {score}";
         }
 
         private void GameCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -61,6 +67,20 @@ namespace Solitaire
 
         }
 
+        private void SaveScoreButton_Click(object sender, RoutedEventArgs e)
+        {
+            var playerNameWindow = new PlayerNameWindow();
+            if (playerNameWindow.ShowDialog() == true)
+            {
+                string playerName = playerNameWindow.PlayerName;
+                int score = _gameManager.GetScore();
+
+                var recordsService = new RecordsService();
+                recordsService.SaveRecord(playerName, score);
+
+                MessageBox.Show("Результат сохранен!", "Сохранение");
+            }
+        }
 
         private void NewGameButton_Click(object sender, RoutedEventArgs e) => _gameManager.StartNewGame();
 
