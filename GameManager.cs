@@ -24,48 +24,127 @@ namespace Solitaire.Services
             _canvas = canvas;
             _gameState = new GameState();
         }
-        public void InitializeDragAndDrop(UIElement cardControl)
+        private void HandleCardDrop(Card draggedCard, Card targetCard)
         {
-            // Добавляем события для карты
-            cardControl.MouseMove += Card_MouseMove;
-            cardControl.MouseLeftButtonDown += Card_MouseLeftButtonDown;
-            cardControl.MouseLeftButtonUp += Card_MouseLeftButtonUp;
+            // Проверка правил:
+            // 1. Перемещение возможно только на карту противоположного цвета и на 1 ранг больше.
+            if (IsMoveValid(draggedCard, targetCard))
+            {
+                // Логика перемещения карты
+                MoveCard(draggedCard, targetCard);
+
+                // Обновляем графику
+                DrawGame();
+            }
+            else
+            {
+                MessageBox.Show("Неверный ход!");
+            }
+        }
+        private bool IsMoveValid(Card draggedCard, Card targetCard = null)
+        {
+            if (targetCard == null) // Если целевая колонка пустая
+            {
+                return draggedCard.CardRank == Card.Rank.King; // Только король может быть перемещён
+            }
+
+            // Проверяем цвет
+            bool isOppositeColor = (draggedCard.CardSuit == Card.Suit.Hearts || draggedCard.CardSuit == Card.Suit.Diamonds) !=
+                                   (targetCard.CardSuit == Card.Suit.Clubs || targetCard.CardSuit == Card.Suit.Spades);
+
+            // Проверяем ранг (должен быть на 1 меньше)
+            bool isOneRankLower = (int)draggedCard.CardRank == (int)targetCard.CardRank - 1;
+
+            return isOppositeColor && isOneRankLower;
         }
 
-        private void Card_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        private void MoveCard(Card draggedCard, Card targetCard)
         {
-            _draggedElement = sender as UIElement;
-            _dragStartPoint = e.GetPosition(_canvas);
-            if (_draggedElement != null)
+            Deck sourcePile = null;
+            Deck targetPile = null;
+
+            // Найти исходную стопку
+            foreach (var pile in _gameState.TableauPiles)
             {
-                Panel.SetZIndex(_draggedElement, 100); // Переместить элемент на передний план
+                if (pile.GetAllCards().Contains(draggedCard))
+                {
+                    sourcePile = pile;
+                    break;
+                }
+            }
+
+            if (_gameState.Waste.GetAllCards().Contains(draggedCard))
+            {
+                sourcePile = _gameState.Waste;
+            }
+
+            // Найти целевую стопку
+            foreach (var pile in _gameState.TableauPiles)
+            {
+                if (pile.GetAllCards().Contains(targetCard))
+                {
+                    targetPile = pile;
+                    break;
+                }
+            }
+
+            if (sourcePile != null && targetPile != null)
+            {
+                // Удаляем карту из исходной стопки
+                sourcePile.RemoveCard(draggedCard);
+
+                // Если убрали верхнюю карту из Tableau, открываем следующую карту
+                if (sourcePile != _gameState.Waste && sourcePile.GetAllCards().Any())
+                {
+                    var topCard = sourcePile.GetAllCards().First();
+                    topCard.IsFaceUp = true;
+                }
+
+                // Добавляем карту в целевую стопку
+                targetPile.AddCard(draggedCard);
             }
         }
 
-        private void Card_MouseMove(object sender, MouseEventArgs e)
+
+        private void InitializeDragAndDrop(UIElement element, Card card)
         {
-            if (_draggedElement != null && e.LeftButton == MouseButtonState.Pressed)
+            if (!card.IsFaceUp)
             {
-                Point currentPoint = e.GetPosition(_canvas);
-                double offsetX = currentPoint.X - _dragStartPoint.X;
-                double offsetY = currentPoint.Y - _dragStartPoint.Y;
-
-                // Перемещаем элемент
-                Canvas.SetLeft(_draggedElement, Canvas.GetLeft(_draggedElement) + offsetX);
-                Canvas.SetTop(_draggedElement, Canvas.GetTop(_draggedElement) + offsetY);
-
-                _dragStartPoint = currentPoint;
+                // Закрытые карты нельзя перетаскивать
+                return;
             }
+
+            element.PreviewMouseLeftButtonDown += (sender, e) =>
+            {
+                DragDrop.DoDragDrop((DependencyObject)sender, card, DragDropEffects.Move);
+            };
+
+            element.Drop += (sender, e) =>
+            {
+                if (e.Data.GetData(typeof(Card)) is Card draggedCard)
+                {
+                    if (card == null) // Если целевая колонка пуста
+                    {
+                        if (IsMoveValid(draggedCard))
+                        {
+                            MoveCardToEmptyColumn(draggedCard);
+                            DrawGame();
+                        }
+                        else
+                        {
+                            MessageBox.Show("Только короли могут перемещаться в пустую колонку!");
+                        }
+                    }
+                    else
+                    {
+                        HandleCardDrop(draggedCard, card);
+                    }
+                }
+            };
+
+
         }
 
-        private void Card_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-        {
-            if (_draggedElement != null)
-            {
-                Panel.SetZIndex(_draggedElement, 0); // Вернуть элемент на исходный слой
-                _draggedElement = null;
-            }
-        }
         public void StartNewGame()
         {
             // Очистка текущего состояния
@@ -139,7 +218,7 @@ namespace Solitaire.Services
             // Отображение Waste (стека удержания)
             if (!_gameState.Waste.IsEmpty())
             {
-                var topWasteCard = _gameState.Waste.GetAllCards().First();
+                var topWasteCard = _gameState.Waste.GetAllCards().First(); // Берём последнюю карту
                 var wasteControl = CreateCardControl(topWasteCard);
                 Canvas.SetLeft(wasteControl, startX + 120);
                 Canvas.SetTop(wasteControl, startY - 90); // Условная позиция
@@ -163,49 +242,20 @@ namespace Solitaire.Services
                 var text = new TextBlock
                 {
                     Text = $"{GetRankSymbol(card.CardRank)} {GetSuitSymbol(card.CardSuit)}",
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center,
+                    HorizontalAlignment = HorizontalAlignment.Left, // Текст выравнивается слева
+                    VerticalAlignment = VerticalAlignment.Top, // Текст выравнивается сверху
+                    Margin = new Thickness(5), // Отступ от границы
                     FontWeight = FontWeights.Bold,
                     Foreground = (card.CardSuit == Card.Suit.Hearts || card.CardSuit == Card.Suit.Diamonds) ? Brushes.Red : Brushes.Black
                 };
+
                 border.Child = text;
             }
 
             // Добавляем Drag-and-Drop обработчики
-            InitializeDragAndDrop(border);
+            InitializeDragAndDrop(border, card);
 
             return border;
-        }
-
-        private void DrawCard(double x, double y, Card card, double width, double height)
-        {
-            var cardRect = new Rectangle
-            {
-                Width = width,
-                Height = height,
-                Fill = card.IsFaceUp ? Brushes.White : Brushes.Gray,
-                Stroke = Brushes.Black,
-                StrokeThickness = 2
-            };
-
-            var cardText = new TextBlock
-            {
-                Text = card.IsFaceUp ? $"{GetRankSymbol(card.CardRank)}{GetSuitSymbol(card.CardSuit)}" : "",
-                Foreground = Brushes.Black,
-                FontSize = 14,
-                FontWeight = FontWeights.Bold,
-                TextAlignment = TextAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
-            };
-
-            Canvas.SetLeft(cardRect, x);
-            Canvas.SetTop(cardRect, y);
-
-            Canvas.SetLeft(cardText, x + 10);
-            Canvas.SetTop(cardText, y + 10);
-
-            _canvas.Children.Add(cardRect);
-            _canvas.Children.Add(cardText);
         }
 
 
@@ -248,45 +298,39 @@ namespace Solitaire.Services
             {
                 var card = _gameState.Stock.DrawCard();
                 card.IsFaceUp = true; // Карта должна быть лицом вверх
-                _gameState.Waste = new Deck(new[] { card });
+                _gameState.Waste.AddCard(card); // Добавляем карту в Waste
                 DrawGame();
             }
         }
-
-
-        private void DrawCardBack(double x, double y, double width, double height)
+        private void MoveCardToEmptyColumn(Card draggedCard)
         {
-            var cardBack = new Rectangle
+            Deck sourcePile = null;
+
+            // Найти исходную стопку
+            foreach (var pile in _gameState.TableauPiles)
             {
-                Width = width,
-                Height = height,
-                Fill = Brushes.Blue,
-                Stroke = Brushes.Black,
-                StrokeThickness = 2
-            };
+                if (pile.GetAllCards().Contains(draggedCard))
+                {
+                    sourcePile = pile;
+                    break;
+                }
+            }
 
-            Canvas.SetLeft(cardBack, x);
-            Canvas.SetTop(cardBack, y);
-
-            _canvas.Children.Add(cardBack);
-        }
-        private void DrawEmptySlot(double x, double y, double width, double height)
-        {
-            var emptySlot = new Rectangle
+            if (_gameState.Waste.GetAllCards().Contains(draggedCard))
             {
-                Width = width,
-                Height = height,
-                Fill = Brushes.Transparent,
-                Stroke = Brushes.Black,
-                StrokeThickness = 1,
-                StrokeDashArray = new DoubleCollection { 2, 2 }
-            };
+                sourcePile = _gameState.Waste;
+            }
 
-            Canvas.SetLeft(emptySlot, x);
-            Canvas.SetTop(emptySlot, y);
+            if (sourcePile != null)
+            {
+                sourcePile.RemoveCard(draggedCard);
 
-            _canvas.Children.Add(emptySlot);
+                // Создаём новую стопку в пустой колонке
+                var emptyPile = new Deck(new[] { draggedCard });
+                _gameState.TableauPiles.Add(emptyPile);
+            }
         }
+
 
         private static IEnumerable<Card> CreateFullDeck()
         {

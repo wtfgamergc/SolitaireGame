@@ -21,5 +21,28 @@ namespace Solitaire.Models
         public bool IsEmpty() => _cards.Count == 0;
 
         public IEnumerable<Card> GetAllCards() => _cards;
+
+        public void AddCard(Card card)
+        {
+            _cards.Push(card);
+        }
+
+        public bool RemoveCard(Card card)
+        {
+            // Преобразуем Stack в список для удобной работы
+            var cardList = _cards.ToList();
+
+            if (cardList.Remove(card)) // Если карта найдена и удалена
+            {
+                // Перезаполняем Stack после удаления
+                _cards.Clear();
+                foreach (var remainingCard in cardList.AsEnumerable().Reverse()) // Возвращаем карты в изначальном порядке
+                    _cards.Push(remainingCard);
+
+                return true; // Успешно удалено
+            }
+
+            return false; // Карта не найдена
+        }
     }
 }

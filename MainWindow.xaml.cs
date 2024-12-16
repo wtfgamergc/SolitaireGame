@@ -30,6 +30,7 @@ namespace Solitaire
 
             // Подписка на клик по колоде
             GameCanvas.MouseLeftButtonDown += GameCanvas_MouseLeftButtonDown;
+
         }
 
         private void GameCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -57,6 +58,7 @@ namespace Solitaire
                 Canvas.SetTop(_draggedElement, position.Y - (_draggedElement.RenderSize.Height / 2));
                 _draggedElement = null;
             }
+
         }
 
 
