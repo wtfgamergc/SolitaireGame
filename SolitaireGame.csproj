@@ -105,6 +105,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="CardCollection.cs" />
     <Compile Include="PlayerNameWindow.xaml.cs">
       <DependentUpon>PlayerNameWindow.xaml</DependentUpon>
     </Compile>

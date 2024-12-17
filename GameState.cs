@@ -11,14 +11,12 @@ namespace Solitaire.Models
         public List<Deck> TableauPiles { get; set; }
         public Deck Stock { get; set; }
         public Deck Waste { get; set; }
-        public List<Deck> FoundationPiles { get; set; }
 
         public GameState()
         {
             TableauPiles = new List<Deck>();
             Stock = new Deck(new List<Card>());
             Waste = new Deck(new List<Card>());
-            FoundationPiles = new List<Deck>();
         }
         
 

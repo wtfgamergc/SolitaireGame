@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SolitaireGame;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,43 +7,47 @@ using System.Threading.Tasks;
 
 namespace Solitaire.Models
 {
-    public class Deck
+    public class Deck : CardCollection
     {
-        private readonly Stack<Card> _cards = new Stack<Card>();
-
         public Deck(IEnumerable<Card> cards)
         {
             foreach (var card in cards)
+            {
                 _cards.Push(card);
+            }
         }
 
-        public Card DrawCard() => _cards.Pop();
-
-        public bool IsEmpty() => _cards.Count == 0;
-
-        public IEnumerable<Card> GetAllCards() => _cards;
-
-        public void AddCard(Card card)
+        // Переопределяем метод добавления карты
+        public override void AddCard(Card card)
         {
             _cards.Push(card);
         }
 
-        public bool RemoveCard(Card card)
+        // Переопределяем метод удаления карты
+        public override bool RemoveCard(Card card)
         {
-            // Преобразуем Stack в список для удобной работы
             var cardList = _cards.ToList();
-
-            if (cardList.Remove(card)) // Если карта найдена и удалена
+            if (cardList.Remove(card))
             {
                 // Перезаполняем Stack после удаления
                 _cards.Clear();
-                foreach (var remainingCard in cardList.AsEnumerable().Reverse()) // Возвращаем карты в изначальном порядке
+                foreach (var remainingCard in cardList.AsEnumerable().Reverse())
+                {
                     _cards.Push(remainingCard);
-
-                return true; // Успешно удалено
+                }
+                return true;
             }
-
-            return false; // Карта не найдена
+            return false;
         }
+
+        // Переопределяем метод вытягивания карты
+        public override Card DrawCard() => _cards.Pop();
+
+        // Переопределяем метод проверки на пустоту
+        public override bool IsEmpty() => _cards.Count == 0;
+
+        // Переопределяем метод получения всех карт
+        public override IEnumerable<Card> GetAllCards() => _cards;
     }
+
 }
