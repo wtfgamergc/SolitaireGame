@@ -44,7 +44,11 @@ namespace Solitaire.Models
         public override Card DrawCard() => _cards.Pop();
 
         // Переопределяем метод проверки на пустоту
-        public override bool IsEmpty() => _cards.Count == 0;
+        public override bool IsEmpty()
+        {
+            return _cards.Count == 0;
+        }
+
 
         // Переопределяем метод получения всех карт
         public override IEnumerable<Card> GetAllCards() => _cards;

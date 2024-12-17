@@ -19,6 +19,7 @@ namespace Solitaire.Services
         private UIElement _draggedElement;
         private Point _dragStartPoint;
         private int _score;
+        public GameState GameState { get; private set; }
         public event Action<int> ScoreUpdated; // Событие для обновления очков
         public event Action StockEmpty; // Событие для уведомления, когда Stock пуст
 
@@ -27,7 +28,22 @@ namespace Solitaire.Services
             _canvas = canvas;
             _gameState = new GameState();
             _score = 0; // Инициализируем очки
+            GameState = new GameState();
         }
+        private void CheckGameOver()
+        {
+            // Проверяем, есть ли карты в таблице, в стопке или в пустой стопке
+            bool isGameOver = _gameState.TableauPiles.All(pile => pile.IsEmpty()) &&
+                              _gameState.Stock.IsEmpty() &&
+                              _gameState.Waste.IsEmpty();
+
+            if (isGameOver)
+            {
+                // Завершаем игру
+                MessageBox.Show("Игра завершена!", "Конец игры", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
         public void AddPoints(int points)
         {
             _score += points;
@@ -198,6 +214,7 @@ namespace Solitaire.Services
 
                 // Обновляем графику
                 DrawGame();
+                CheckGameOver();
             }
             else
             {
@@ -280,6 +297,7 @@ namespace Solitaire.Services
                 // Добавляем карту в целевую стопку
                 targetPile.AddCard(draggedCard);
             }
+            CheckGameOver();
         }
 
 
@@ -357,7 +375,7 @@ namespace Solitaire.Services
             DrawGame();
         }
 
-        private void DrawGame()
+        public void DrawGame()
         {
             _canvas.Children.Clear();
 
@@ -484,6 +502,8 @@ namespace Solitaire.Services
                 // Если Stock пуст, вызываем событие
                 StockEmpty?.Invoke();
             }
+
+            CheckGameOver();
         }
         private void MoveCardToEmptyColumn(Card draggedCard)
         {
@@ -618,7 +638,19 @@ namespace Solitaire.Services
 
             // Перерисовываем игровое поле
             DrawGame();
+            CheckGameOver();
         }
+        public bool IsGameOver()
+        {
+            // Check if all tableau piles are empty, the stock is empty, and the waste is empty
+            bool isTableauEmpty = _gameState.TableauPiles.All(pile => pile.IsEmpty());
+            bool isStockEmpty = _gameState.Stock.IsEmpty();
+            bool isWasteEmpty = _gameState.Waste.IsEmpty();
+
+            // If all of the above are true, the game is over
+            return isTableauEmpty && isStockEmpty && isWasteEmpty;
+        }
+
 
 
     }

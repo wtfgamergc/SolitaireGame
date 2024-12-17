@@ -39,6 +39,16 @@ namespace Solitaire
             // Когда Stock пуст, делаем кнопку перезапуска активной
             RestartButton.IsEnabled = true;
         }
+        private void CheckGameOver()
+        {
+            // Проверка завершения игры
+            if (_gameManager.IsGameOver())
+            {
+                MessageBox.Show("Игра завершена!", "Конец игры", MessageBoxButton.OK, MessageBoxImage.Information);
+                RestartButton.IsEnabled = false; // Отключаем кнопку перезапуска, если игра завершена
+            }
+        }
+
 
         private void UpdateScoreUI(int score)
         {
@@ -105,5 +115,34 @@ namespace Solitaire
             var recordsWindow = new RecordsWindow();
             recordsWindow.ShowDialog();
         }
+    //    private void ClearCardButton_Click(object sender, RoutedEventArgs e)
+    //    {
+    //        // Если в Waste есть карты, удалим одну
+    //        if (!_gameManager.GameState.Waste.IsEmpty())
+    //        {
+    //            var cardToRemove = _gameManager.GameState.Waste.DrawCard(); // Извлекаем верхнюю карту из Waste
+
+    //            // Проверяем, закончена ли игра после удаления карты
+    //            if (_gameManager.IsGameOver())
+    //            {
+    //                MessageBox.Show("Игра завершена! Нет доступных карт для перемещения.", "Конец игры", MessageBoxButton.OK, MessageBoxImage.Information);
+    //                // Здесь можно выполнить другие действия, например, заблокировать кнопки или показать результат
+    //                RestartButton.IsEnabled = true; // Активируем кнопку перезапуска
+    //            }
+    //            else
+    //            {
+    //                MessageBox.Show("Карта удалена. Игра продолжается.", "Очистка карты", MessageBoxButton.OK, MessageBoxImage.Information);
+    //            }
+
+    //            // Перерисуем игру, чтобы отобразить обновлённое состояние
+    //            _gameManager.DrawGame();
+    //        }
+    //        else
+    //        {
+    //            MessageBox.Show("В стеке Waste нет карт для очистки.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+    //        }
+    //    }
+
+
     }
 }

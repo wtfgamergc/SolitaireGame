@@ -16,7 +16,8 @@
            VerticalAlignment="Top" 
            HorizontalAlignment="Right" 
            Margin="0,10,10,0"/>
-        
+        <!--<Button Name="ClearCardButton" Content="Очистить карту" Width="150" Height="40" HorizontalAlignment="Center" VerticalAlignment="Bottom" Click="ClearCardButton_Click"/>-->
+
 
         <!-- Кнопки управления -->
         <StackPanel Orientation="Horizontal" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="10">
@@ -26,6 +27,7 @@
             <Button Name="RestartButton" Content="Рестарт" Width="100" Margin="5" Click="RestartButton_Click" IsEnabled="False"/>
             <Button Name="ViewRecordsButton" Content="Рекорды" Width="100" Margin="5" Click="ViewRecordsButton_Click"/>
             <Button Name="SaveScoreButton" Content="Сохранить очки" Width="150" Margin="5" Click="SaveScoreButton_Click"/>
+            
 
         </StackPanel>
     </Grid>
