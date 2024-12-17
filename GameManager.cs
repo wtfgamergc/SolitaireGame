@@ -20,6 +20,7 @@ namespace Solitaire.Services
         private Point _dragStartPoint;
         private int _score;
         public event Action<int> ScoreUpdated; // Событие для обновления очков
+        public event Action StockEmpty; // Событие для уведомления, когда Stock пуст
 
         public GameManager(Canvas canvas)
         {
@@ -477,6 +478,11 @@ namespace Solitaire.Services
                 card.IsFaceUp = true; // Карта должна быть лицом вверх
                 _gameState.Waste.AddCard(card); // Добавляем карту в Waste
                 DrawGame();
+            }
+            else
+            {
+                // Если Stock пуст, вызываем событие
+                StockEmpty?.Invoke();
             }
         }
         private void MoveCardToEmptyColumn(Card draggedCard)

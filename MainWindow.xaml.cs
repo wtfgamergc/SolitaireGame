@@ -28,10 +28,16 @@ namespace Solitaire
             InitializeComponent();
             _gameManager = new GameManager(GameCanvas);
             _gameManager.ScoreUpdated += UpdateScoreUI;
+            _gameManager.StockEmpty += OnStockEmpty;
 
             // Подписка на клик по колоде
             GameCanvas.MouseLeftButtonDown += GameCanvas_MouseLeftButtonDown;
 
+        }
+        private void OnStockEmpty()
+        {
+            // Когда Stock пуст, делаем кнопку перезапуска активной
+            RestartButton.IsEnabled = true;
         }
 
         private void UpdateScoreUI(int score)
@@ -88,7 +94,11 @@ namespace Solitaire
 
         private void LoadGameButton_Click(object sender, RoutedEventArgs e) => _gameManager.LoadGame();
 
-        private void RestartButton_Click(object sender, RoutedEventArgs e) => _gameManager.RestartGame();
+        private void RestartButton_Click(object sender, RoutedEventArgs e)
+        {
+            _gameManager.RestartGame();
+            RestartButton.IsEnabled = false; // После перезапуска отключаем кнопку
+        }
 
         private void ViewRecordsButton_Click(object sender, RoutedEventArgs e)
         {
